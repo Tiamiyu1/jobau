@@ -115,7 +115,7 @@ def get_jobs_from_page(page_num=1):
     return jobs
 
 
-def get_all_today_jobs(max_pages=2):
+def get_all_today_jobs(max_pages=5):
     """Fetch all today's job listings from all pages."""
     total_pages = get_total_pages()
     print(f"📊 Total pages to scrape: {total_pages}")
@@ -218,7 +218,7 @@ def get_job_details(job_url):
 def main():
     # Step 1: Get all today's job listings from all pages
     # Set max_pages=None to scrape all pages, or max_pages=5 to limit
-    summary_jobs = get_all_today_jobs(max_pages=None)
+    summary_jobs = get_all_today_jobs(max_pages=3)
     print(f"\n✅ Total jobs found: {len(summary_jobs)}")
 
     # Step 2: Fetch detailed info for each job
