@@ -57,7 +57,7 @@ def get_total_pages():
     soup = BeautifulSoup(response.text, "html.parser")
     
     # Look for pagination - adjust selector based on actual HTML structure
-    pagination = soup.select("ul.pagination li a")
+    pagination = soup.select("ul.setPaginate li a")
     
     if not pagination:
         return 1  # Only one page
@@ -115,7 +115,7 @@ def get_jobs_from_page(page_num=1):
     return jobs
 
 
-def get_all_today_jobs(max_pages=3):
+def get_all_today_jobs(max_pages=None):
     """Fetch all today's job listings from all pages."""
     total_pages = get_total_pages()
     print(f"📊 Total pages to scrape: {total_pages}")
