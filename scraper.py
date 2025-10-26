@@ -182,6 +182,8 @@ def main():
     df = pd.DataFrame(detailed_jobs)
     print(df.head())
 
+    # Step 4: Save to Google Sheets
+    save_to_google_sheet(df)
 
 # --------------------------------------------
 # GOOGLE SHEETS INTEGRATION
