@@ -1,4 +1,25 @@
 # -*- coding: utf-8 -*-
+
+# Add this at the start of your script for better debugging
+import sys
+print(f"Python version: {sys.version}")
+print("Starting scraper...")
+
+# Add try-except blocks
+try:
+    gc = get_gspread_client()
+    print("✓ Google Sheets connected")
+except Exception as e:
+    print(f"✗ Failed to connect to Google Sheets: {e}")
+    raise
+
+# After scraping
+print(f"✓ Scraped {len(data)} jobs")
+
+# After writing to sheet
+print("✓ Data written to Google Sheet")
+
+
 import re
 import requests
 from bs4 import BeautifulSoup
@@ -176,7 +197,7 @@ def main():
             time.sleep(1.5)  # polite scraping
         except Exception as e:
             print(f"Error fetching {job['link']}: {e}")
-        # break  # Remove this 'break' if you want to scrape all jobs
+        break  # Remove this 'break' if you want to scrape all jobs
 
     # Step 3: Save to DataFrame
     df = pd.DataFrame(detailed_jobs)
