@@ -5,14 +5,6 @@ import sys
 print(f"Python version: {sys.version}")
 print("Starting scraper...")
 
-# Add try-except blocks
-try:
-    gc = get_gspread_client()
-    print("✓ Google Sheets connected")
-except Exception as e:
-    print(f"✗ Failed to connect to Google Sheets: {e}")
-    raise
-
 # After scraping
 print(f"✓ Scraped {len(data)} jobs")
 
@@ -56,7 +48,12 @@ def get_gspread_client():
     return gspread.authorize(creds)
 
 # Use it in your script
-gc = get_gspread_client()
+try:
+    gc = get_gspread_client()
+    print("✓ Google Sheets connected successfully")
+except Exception as e:
+    print(f"✗ Failed to connect to Google Sheets: {e}")
+    raise
 
 # --------------------------------------------
 # CONFIGURATION
