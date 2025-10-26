@@ -13,7 +13,6 @@ import os
 
 # Authentication for GitHub Actions
 def get_gspread_client():
-    # Load credentials from environment variable
     creds_json = os.environ.get('GOOGLE_CREDENTIALS')
     if creds_json:
         creds_dict = json.loads(creds_json)
@@ -25,7 +24,6 @@ def get_gspread_client():
             ]
         )
     else:
-        # Fallback for local testing with JSON file
         creds = Credentials.from_service_account_file(
             'credentials.json',
             scopes=[
@@ -35,7 +33,6 @@ def get_gspread_client():
         )
     return gspread.authorize(creds)
 
-# Use it in your script
 try:
     gc = get_gspread_client()
     print("✓ Google Sheets connected successfully")
@@ -54,9 +51,36 @@ headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
 # --------------------------------------------
 # SCRAPING FUNCTIONS
 # --------------------------------------------
-def get_today_jobs():
-    """Fetch today's job listings and return their basic info and links."""
+def get_total_pages():
+    """Find out how many pages of jobs exist for today."""
     response = requests.get(TODAY_URL, headers=headers)
+    soup = BeautifulSoup(response.text, "html.parser")
+    
+    # Look for pagination - adjust selector based on actual HTML structure
+    pagination = soup.select("ul.pagination li a")
+    
+    if not pagination:
+        return 1  # Only one page
+    
+    # Get the last page number
+    page_numbers = []
+    for link in pagination:
+        text = link.get_text(strip=True)
+        if text.isdigit():
+            page_numbers.append(int(text))
+    
+    return max(page_numbers) if page_numbers else 1
+
+
+def get_jobs_from_page(page_num=1):
+    """Fetch job listings from a specific page number."""
+    if page_num == 1:
+        url = TODAY_URL
+    else:
+        url = f"{TODAY_URL}?page={page_num}"
+    
+    print(f"📄 Scraping page {page_num}: {url}")
+    response = requests.get(url, headers=headers)
     soup = BeautifulSoup(response.text, "html.parser")
 
     jobs = []
@@ -69,7 +93,6 @@ def get_today_jobs():
 
         title_text = title_tag.get_text(strip=True)
 
-        # Split "at" if it exists, e.g., "HR Associate at HR Aid"
         if " at " in title_text:
             parts = title_text.split(" at ", 1)
             title = parts[0].strip()
@@ -87,7 +110,31 @@ def get_today_jobs():
             "location": location,
             "link": link
         })
+    
+    print(f"   Found {len(jobs)} jobs on page {page_num}")
     return jobs
+
+
+def get_all_today_jobs(max_pages=3):
+    """Fetch all today's job listings from all pages."""
+    total_pages = get_total_pages()
+    print(f"📊 Total pages to scrape: {total_pages}")
+    
+    # Limit pages if specified
+    if max_pages:
+        total_pages = min(total_pages, max_pages)
+        print(f"   (Limited to {max_pages} pages)")
+    
+    all_jobs = []
+    for page in range(1, total_pages + 1):
+        try:
+            jobs = get_jobs_from_page(page)
+            all_jobs.extend(jobs)
+            time.sleep(2)  # Be polite between page requests
+        except Exception as e:
+            print(f"❌ Error scraping page {page}: {e}")
+    
+    return all_jobs
 
 
 def get_job_details(job_url):
@@ -155,7 +202,8 @@ def get_job_details(job_url):
         "Experience": details.get("experience"),
         "Qualification": details.get("qualification"),
         "Job Type": details.get("job type"),
-        "Location": ", ".join(filter(None, [details.get("city"), details.get("location")])),
+        "State": details.get("location"), 
+        "City": details.get("city"),
         "Salary": details.get("salary"),
         "Field": details.get("job field"),
         "Posted on": details.get("posted_date"),
@@ -168,24 +216,25 @@ def get_job_details(job_url):
 # MAIN SCRAPING WORKFLOW
 # --------------------------------------------
 def main():
-    # Step 1: Get today’s job listings
-    summary_jobs = get_today_jobs()
-    print(f"Found {len(summary_jobs)} jobs today.")
+    # Step 1: Get all today's job listings from all pages
+    # Set max_pages=None to scrape all pages, or max_pages=5 to limit
+    summary_jobs = get_all_today_jobs(max_pages=None)
+    print(f"\n✅ Total jobs found: {len(summary_jobs)}")
 
     # Step 2: Fetch detailed info for each job
     detailed_jobs = []
     for i, job in enumerate(summary_jobs, start=1):
-        print(f"Fetching job {i}/{len(summary_jobs)}: {job['title']}")
+        print(f"🔍 Fetching job {i}/{len(summary_jobs)}: {job['title']}")
         try:
             details = get_job_details(job["link"])
             detailed_jobs.append(details)
             time.sleep(1.5)  # polite scraping
         except Exception as e:
-            print(f"Error fetching {job['link']}: {e}")
-        break  # Remove this 'break' if you want to scrape all jobs
+            print(f"❌ Error fetching {job['link']}: {e}")
 
     # Step 3: Save to DataFrame
     df = pd.DataFrame(detailed_jobs)
+    print(f"\n📊 Successfully scraped {len(df)} jobs")
     print(df.head())
 
     # Step 4: Save to Google Sheets
