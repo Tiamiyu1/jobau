@@ -6,7 +6,7 @@ print(f"Python version: {sys.version}")
 print("Starting scraper...")
 
 # After scraping
-print(f"✓ Scraped {len(data)} jobs")
+print(f"✓ Scraped {len(df)} jobs")
 
 # After writing to sheet
 print("✓ Data written to Google Sheet")
