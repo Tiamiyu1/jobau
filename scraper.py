@@ -195,11 +195,6 @@ def main():
 # GOOGLE SHEETS INTEGRATION
 # --------------------------------------------
 def save_to_google_sheet(df, sheet_name="MyJobMag_Jobs_Latest", replace=True):
-    """Save job data to Google Sheets."""
-    auth.authenticate_user()
-    creds, _ = default()
-    gc = gspread.authorize(creds)
-
     try:
         sh = gc.open(sheet_name)
         print(f"📘 Found existing Google Sheet: {sheet_name}")
