@@ -2,7 +2,7 @@ name: Job Scraper
 
 on:
   schedule:
-    - cron: '0 8 * * *'   # 8 AM UTC
+    - cron: '12 9 * * *'   # 8 AM UTC
     - cron: '0 17 * * *'  # 8 PM UTC
   workflow_dispatch:
 
