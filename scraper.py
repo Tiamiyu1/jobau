@@ -238,6 +238,7 @@ def main():
     print(df.head())
 
     # Step 4: Save to Google Sheets
+    df = df.drop_duplicates()
     save_to_google_sheet(df)
 
 # --------------------------------------------
