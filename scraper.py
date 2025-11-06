@@ -114,7 +114,7 @@ def get_today_jobs():
 
 
 def get_job_details(job_url):
-    """Fetch detailed info for one job posting."""
+    """Fetch detailed info for one job posting with robust extraction."""
     response = requests.get(job_url, headers=headers)
     soup = BeautifulSoup(response.text, "html.parser")
 
@@ -157,9 +157,159 @@ def get_job_details(job_url):
         deadline_text = deadline_text.replace("Deadline :", "").replace("Deadline:", "").strip()
         details["deadline_date"] = deadline_text
 
-    # Description
-    desc_section = soup.select_one("div.job-details-section")
-    description = desc_section.get_text(separator="\n", strip=True) if desc_section else None
+    # Extract APPLICATION METHOD - FIXED to get actual href URL
+    application_method = None
+    application_instructions = None
+    
+    # Find the "application-method" or "Method of Application" section
+    app_method_section = soup.find("h2", id="application-method")
+    if not app_method_section:
+        # Try alternative selectors
+        for heading in soup.find_all(['h2', 'h3']):
+            if 'application' in heading.get_text(strip=True).lower():
+                app_method_section = heading
+                break
+    
+    if app_method_section:
+        # Get the div that follows the h2
+        app_div = app_method_section.find_next_sibling("div")
+        
+        if app_div:
+            # Get the full application instructions first
+            application_instructions = app_div.get_text(separator=" ", strip=True)
+            
+            # Look for ANY link with href in the application div
+            app_link = app_div.find("a", href=True)
+            
+            if app_link:
+                link_href = app_link.get('href', '')
+                
+                # Extract the actual URL from href attribute
+                if link_href.startswith('http'):
+                    # It's already a full URL - use it directly
+                    application_method = link_href
+                elif link_href.startswith('/apply-now/'):
+                    # Internal apply link - construct full URL
+                    base_url = '/'.join(response.url.split('/')[:3])  # Get https://domain.com
+                    application_method = base_url + link_href
+                else:
+                    # Might be email-based application
+                    # Extract email from strong tag or text
+                    email_tag = app_div.find("strong")
+                    if email_tag:
+                        email_text = email_tag.get_text(strip=True)
+                        # Check if it's actually an email
+                        if '@' in email_text:
+                            email = email_text
+                            subject = title.replace(" ", "%20") if title else "Job%20Application"
+                            application_method = f"mailto:{email}?subject={subject}"
+                    
+                    if not application_method:
+                        # Try to find email using regex in the instructions
+                        email_pattern = r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}'
+                        email_match = re.search(email_pattern, application_instructions)
+                        if email_match:
+                            email = email_match.group(0)
+                            subject = title.replace(" ", "%20") if title else "Job%20Application"
+                            application_method = f"mailto:{email}?subject={subject}"
+            else:
+                # No link found, must be email-based
+                email_tag = app_div.find("strong")
+                if email_tag:
+                    email_text = email_tag.get_text(strip=True)
+                    if '@' in email_text:
+                        email = email_text
+                        subject = title.replace(" ", "%20") if title else "Job%20Application"
+                        application_method = f"mailto:{email}"
+                
+                if not application_method:
+                    # Last resort: regex search for email
+                    email_pattern = r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}'
+                    email_match = re.search(email_pattern, application_instructions)
+                    if email_match:
+                        email = email_match.group(0)
+                        subject = title.replace(" ", "%20") if title else "Job%20Application"
+                        application_method = f"mailto:{email}"
+                        #f"mailto:{email}?subject={subject}"
+
+    # Extract job overview/summary - try multiple selectors
+    overview = None
+    overview_selectors = [
+        "div.job-overview",
+        "div.job-summary",
+        "div[class*='overview']",
+        "div[class*='summary']",
+        "section.overview",
+        "div.description-summary"
+    ]
+    
+    for selector in overview_selectors:
+        overview_section = soup.select_one(selector)
+        if overview_section:
+            overview = overview_section.get_text(separator="\n", strip=True)
+            break
+    
+    # If no dedicated overview found, try to extract from the first paragraph
+    if not overview:
+        first_para = soup.select_one("div.job-details-section p:first-of-type")
+        if first_para:
+            overview = first_para.get_text(strip=True)
+
+    # Extract full job description - try multiple approaches
+    description = None
+    description_selectors = [
+        "div.job-details-section",
+        "div.job-description",
+        "div[class*='description']",
+        "div.job-details",
+        "section.job-content",
+        "div#job-description"
+    ]
+    
+    for selector in description_selectors:
+        desc_section = soup.select_one(selector)
+        if desc_section:
+            description = desc_section.get_text(separator="\n", strip=True)
+            break
+
+    # Extract responsibilities section
+    responsibilities = None
+    resp_patterns = ["responsibilities", "duties", "key responsibilities", "what you'll do"]
+    
+    for heading in soup.find_all(['h2', 'h3', 'h4', 'strong', 'b']):
+        heading_text = heading.get_text(strip=True).lower()
+        if any(pattern in heading_text for pattern in resp_patterns):
+            # Get the next sibling elements until another heading
+            resp_content = []
+            for sibling in heading.find_next_siblings():
+                if sibling.name in ['h2', 'h3', 'h4'] or (sibling.name in ['strong', 'b'] and len(sibling.get_text(strip=True)) > 20):
+                    break
+                text = sibling.get_text(separator="\n", strip=True)
+                if text:
+                    resp_content.append(text)
+            
+            if resp_content:
+                responsibilities = "\n".join(resp_content)
+                break
+
+    # Extract requirements/qualifications section
+    requirements = None
+    req_patterns = ["requirements", "qualifications", "what we're looking for", "you should have"]
+    
+    for heading in soup.find_all(['h2', 'h3', 'h4', 'strong', 'b']):
+        heading_text = heading.get_text(strip=True).lower()
+        if any(pattern in heading_text for pattern in req_patterns):
+            req_content = []
+            for sibling in heading.find_next_siblings():
+                if sibling.name in ['h2', 'h3', 'h4'] or (sibling.name in ['strong', 'b'] and len(sibling.get_text(strip=True)) > 20):
+                    break
+                text = sibling.get_text(separator="\n", strip=True)
+                if text:
+                    req_content.append(text)
+            
+            if req_content:
+                requirements = "\n".join(req_content)
+                break
 
     # Salary detection
     page_text = soup.get_text(" ", strip=True)
@@ -169,7 +319,11 @@ def get_job_details(job_url):
     )
 
     salary_match = salary_pattern.search(page_text)
-    details['salary'] = salary_match.group(1).strip() if salary_match else None
+    salary = salary_match.group(1).strip() if salary_match else None
+    
+    # Also check in the details dict
+    if not salary and 'salary' in details:
+        salary = details['salary']
 
     # Combine all
     return {
@@ -180,11 +334,18 @@ def get_job_details(job_url):
         "Job Type": details.get("job type"),
         "State": details.get("location"),
         "City": details.get("city"),
-        "Salary": details.get("salary"),
+        "Salary": salary,
         "Field": details.get("job field"),
         "Posted on": details.get("posted_date"),
         "Deadline": details.get("deadline_date"),
-        "Apply": job_url
+        # "Overview": overview,
+        "Description": description,
+        # "Responsibilities": responsibilities,
+        # "Requirements": requirements,
+        "Apply Now": application_method,        
+        # "Apply": job_url,
+        # "Application Instructions": application_instructions,
+        # "Raw_Details": details
     }
 
 
@@ -218,7 +379,7 @@ def main():
 # --------------------------------------------
 # GOOGLE SHEETS INTEGRATION
 # --------------------------------------------
-def save_to_google_sheet(df, sheet_name="MyJobMag_Jobs_Latest", replace=True):
+def save_to_google_sheet(df, sheet_name="AlumUnite Job Board", replace=True):
     try:
         sh = gc.open(sheet_name)
         print(f"📘 Found existing Google Sheet: {sheet_name}")
