@@ -220,6 +220,7 @@ def get_job_details(job_url):
     return {
         "Title": title,
         "Company": company,
+        "Description": description,
         "Experience": details.get("experience"),
         "Qualification": details.get("qualification"),
         "Job Type": details.get("job type"),
@@ -229,7 +230,6 @@ def get_job_details(job_url):
         "Field": details.get("job field"),
         "Posted on": details.get("posted_date"),
         "Deadline": details.get("deadline_date"),
-        "Description": description,
         "Apply Now": application_method,
     }
 
