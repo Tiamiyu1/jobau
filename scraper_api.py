@@ -341,7 +341,7 @@ def main():
     print(f"📡 API Endpoint: {API_ENDPOINT}\n")
     
     # Step 1: Get today's job listings
-    summary_jobs = get_today_jobs(max_jobs=3)
+    summary_jobs = get_today_jobs(max_jobs=1)
     
     if not summary_jobs:
         print("❌ No jobs found. Exiting.")
