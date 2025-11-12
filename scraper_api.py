@@ -283,7 +283,7 @@ def map_job_to_api_format(job):
         "url": job.get("Apply Now"),
         "expiration_date": expiration_date,
         "location": location,
-        "job_type": job_type,
+        "job_type": job.get("Job Type"),
         "employment_type": employment_type,
         "experience_level": job.get("Experience"),
         "qualifications": job.get("Qualification") ,
