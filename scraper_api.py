@@ -240,6 +240,19 @@ def get_job_details(job_url):
 def map_job_to_api_format(job):
     """Convert scraped job data to API format."""
     
+    # Extract skills from description/requirements
+    skills = []
+    text_to_search = f"{job.get('Description', '')} {job.get('Requirements', '')}"
+    common_skills = [
+        "Python", "JavaScript", "Java", "PHP", "Laravel", "React", "Node.js",
+        "SQL", "MySQL", "PostgreSQL", "MongoDB", "AWS", "Azure", "Docker",
+        "Git", "TypeScript", "Vue.js", "Angular", "Django", "Flask"
+    ]
+    for skill in common_skills:
+        if skill.lower() in text_to_search.lower():
+            skills.append(skill)
+            
+    
     # Parse deadline to expiration_date
     expiration_date = None
     deadline = job.get("Deadline")
@@ -278,12 +291,16 @@ def map_job_to_api_format(job):
         "company": job.get("Company"),
         "title": job.get("Title"),
         "description": job.get("Description"),
+        "overview": job.get("Description"),
+        "responsibilities": job.get("Description"),
         "url": job.get("Apply Now"),
         "expiration_date": expiration_date,
         "location": location,
         "job_type": job.get("Job Type"),
+        "employment_type": job.get("Job Type"),
         "experience_level": job.get("Experience"),
         "qualifications": job.get("Qualification"),
+        "skills": skills[:5] if skills else ["General"],  
         "currency": currency,
         "salary_range": salary_range,
         "pay_schedule": "Monthly",
