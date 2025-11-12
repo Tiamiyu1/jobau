@@ -1,0 +1,57 @@
+name: Job Scraper
+on:
+  schedule:
+    - cron: '30 8 * * 1'   # Monday at 9:30 AM Nigeria time (8:30 AM UTC)
+    - cron: '30 8 * * 3'   # Wednesday at 9:30 AM Nigeria time (8:30 AM UTC)
+  workflow_dispatch:
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      
+      - name: Cache pip dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+      
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+      
+      - name: Run scraper
+        env:
+          API_BASE_URL: 'https://api.alumunite-staging.com'  # Change to production when ready
+        run: python scraper_api.py
+```
+
+## Key changes:
+
+1. **Removed `GOOGLE_CREDENTIALS`** - Not needed anymore since we're using the API
+2. **Added `API_BASE_URL`** environment variable
+3. **Updated cron schedule**:
+   - `* * * * 1` = Monday (0=Sunday, 1=Monday, ..., 6=Saturday)
+   - `* * * * 3` = Wednesday
+   - Runs at 8:30 AM UTC = 9:30 AM Nigeria time
+
+## Cron format reminder:
+```
+* * * * *
+│ │ │ │ │
+│ │ │ │ └─ Day of week (0-6, Sunday=0)
+│ │ │ └─── Month (1-12)
+│ │ └───── Day of month (1-31)
+│ └─────── Hour (0-23)
+└───────── Minute (0-59)
