@@ -22,8 +22,8 @@ API_ENDPOINT = f"{API_BASE_URL}/v1/store-job-api"
 # --------------------------------------------
 # SCRAPING FUNCTIONS
 # --------------------------------------------
-def get_today_jobs():
-    """Fetch all job listings across all pages for today's postings."""
+def get_today_jobs(max_jobs=None):
+    """Fetch job listings from today's postings."""
     all_jobs = []
     page = 1
 
@@ -72,6 +72,11 @@ def get_today_jobs():
                 "location": location,
                 "link": link
             })
+            
+            # Stop if we've reached max_jobs
+            if max_jobs and len(all_jobs) >= max_jobs:
+                print(f"✋ Reached limit of {max_jobs} jobs")
+                return all_jobs
 
         print(f"   Found {len(job_divs)} jobs on page {page}")
         page += 1
@@ -322,7 +327,7 @@ def main():
     print(f"📡 API Endpoint: {API_ENDPOINT}\n")
     
     # Step 1: Get today's job listings
-    summary_jobs = get_today_jobs()
+    summary_jobs = get_today_jobs(max_jobs=3)
     
     if not summary_jobs:
         print("❌ No jobs found. Exiting.")
