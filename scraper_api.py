@@ -229,9 +229,8 @@ def get_job_details(job_url):
         "Field": details.get("job field"),
         "Posted on": details.get("posted_date"),
         "Deadline": details.get("deadline_date"),
-        # "Overview": overview,
         "Description": description,
-        "Apply Now": application_method or job_url,
+        "Apply Now": application_method,
     }
 
 
@@ -279,14 +278,12 @@ def map_job_to_api_format(job):
         "company": job.get("Company"),
         "title": job.get("Title"),
         "description": job.get("Description"),
-        "responsibilities": job.get("Responsibilities"),
         "url": job.get("Apply Now"),
         "expiration_date": expiration_date,
         "location": location,
         "job_type": job.get("Job Type"),
-        "employment_type": employment_type,
         "experience_level": job.get("Experience"),
-        "qualifications": job.get("Qualification") ,
+        "qualifications": job.get("Qualification"),
         "currency": currency,
         "salary_range": salary_range,
         "pay_schedule": "Monthly",
