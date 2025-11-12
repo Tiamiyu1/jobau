@@ -35,23 +35,3 @@ jobs:
         env:
           API_BASE_URL: 'https://api.alumunite-staging.com'  # Change to production when ready
         run: python scraper_api.py
-```
-
-## Key changes:
-
-1. **Removed `GOOGLE_CREDENTIALS`** - Not needed anymore since we're using the API
-2. **Added `API_BASE_URL`** environment variable
-3. **Updated cron schedule**:
-   - `* * * * 1` = Monday (0=Sunday, 1=Monday, ..., 6=Saturday)
-   - `* * * * 3` = Wednesday
-   - Runs at 8:30 AM UTC = 9:30 AM Nigeria time
-
-## Cron format reminder:
-```
-* * * * *
-│ │ │ │ │
-│ │ │ │ └─ Day of week (0-6, Sunday=0)
-│ │ │ └─── Month (1-12)
-│ │ └───── Day of month (1-31)
-│ └─────── Hour (0-23)
-└───────── Minute (0-59)
