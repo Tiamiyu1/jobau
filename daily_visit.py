@@ -38,7 +38,7 @@ except Exception as e:
     print(f"✗ Failed to connect to Google Sheets: {e}")
     raise
 
-def save_to_google_sheet(df, sheet_name="AlumUnite Job Board", replace=True):
+def save_to_google_sheet(df, sheet_name="Daily User Data", replace=True):
     try:
         sh = gc.open(sheet_name)
         print(f"📘 Found existing Google Sheet: {sheet_name}")
