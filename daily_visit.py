@@ -80,6 +80,3 @@ df.columns = ['date', "stagging", "new_signups"]
 df['date'] = pd.to_datetime(df['date']).dt.strftime('%Y-%m-%d')
 df['cum_stage'], df['cum_new_signups'] = df['stagging'].cumsum(), df['new_signups'].cumsum()
 save_to_google_sheet(df)
-
-if __name__ == "__main__":
-    main()
