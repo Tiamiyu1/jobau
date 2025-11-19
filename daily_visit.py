@@ -11,7 +11,7 @@ import os
 
 # Authentication for GitHub Actions
 def get_gspread_client():
-    creds_json = os.environ.get('GOOGLE_CREDENTIALS')
+    creds_json = os.environ.get('GOOGLE_CREDENTIALS_2')
     if creds_json:
         creds_dict = json.loads(creds_json)
         creds = Credentials.from_service_account_info(
@@ -49,16 +49,16 @@ def save_to_google_sheet(df, sheet_name="Daily User Data", replace=True):
     try:
         worksheet = sh.get_worksheet(0)
     except IndexError:
-        worksheet = sh.add_worksheet(title="Today_Jobs", rows=1000, cols=20)
+        worksheet = sh.add_worksheet(title="User_visits", rows=1000, cols=20)
 
     if replace:
         worksheet.clear()
         set_with_dataframe(worksheet, df)
-        print("✅ Sheet replaced with latest job data.")
+        print("✅ Sheet replaced with latest visits.")
     else:
         existing = len(worksheet.get_all_values())
         set_with_dataframe(worksheet, df, row=existing + 1, include_column_header=False)
-        print("➕ New job data appended.")
+        print("➕ New visit data appended.")
 
     print(f"🔗 Google Sheet link: https://docs.google.com/spreadsheets/d/{sh.id}")
 
