@@ -93,7 +93,7 @@ def get_today_jobs(max_jobs=None):
             if max_jobs and len(all_jobs) >= max_jobs:
                 print(f"✋ Reached limit of {max_jobs} jobs")
                 return all_jobs
-        # break
+        break
         print(f"   Found {len(job_divs)} jobs on page {page}")
         page += 1
         time.sleep(1)
