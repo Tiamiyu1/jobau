@@ -39,7 +39,6 @@ TEST_MODE = True  # Set to False to actually push to API
 print(f"🔧 Configuration:")
 print(f"   API: {API_ENDPOINT}")
 print(f"   Test Mode: {TEST_MODE}")
-print(f"   Max Jobs: {MAX_JOBS_TO_SCRAPE or 'All'}\n")
 
 
 # --------------------------------------------
