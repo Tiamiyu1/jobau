@@ -1,6 +1,7 @@
 requests
 beautifulsoup4
 pandas
+re
 gspread
 gspread-dataframe
 google-auth
