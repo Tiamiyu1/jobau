@@ -34,7 +34,7 @@ API_BASE_URL = 'https://api.alumunite-staging.com'  # Staging
 API_ENDPOINT = f"{API_BASE_URL}/v1/store-job-api"
 
 # Test mode settings
-TEST_MODE = False  # Set to False to actually push to API
+TEST_MODE = True  # Set to False to actually push to API
 
 print(f"🔧 Configuration:")
 print(f"   API: {API_ENDPOINT}")
@@ -99,7 +99,7 @@ def get_today_jobs(max_jobs=None):
             if max_jobs and len(all_jobs) >= max_jobs:
                 print(f"✋ Reached limit of {max_jobs} jobs")
                 return all_jobs
-        # break
+        break
         print(f"   Found {len(job_divs)} jobs on page {page}")
         page += 1
         time.sleep(1)
