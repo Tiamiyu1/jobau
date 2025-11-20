@@ -34,7 +34,7 @@ API_BASE_URL = 'https://api.alumunite-staging.com'  # Staging
 API_ENDPOINT = f"{API_BASE_URL}/v1/store-job-api"
 
 # Test mode settings
-TEST_MODE = True  # Set to False to actually push to API
+TEST_MODE = False  # Set to False to actually push to API
 
 print(f"🔧 Configuration:")
 print(f"   API: {API_ENDPOINT}")
