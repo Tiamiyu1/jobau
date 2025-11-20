@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import re
 import requests
 from bs4 import BeautifulSoup
@@ -9,8 +7,6 @@ import json
 from datetime import datetime
 import random
 
-import re
-
 def clean_text(text):
     """Clean unwanted special characters and Unicode from text."""
     if not text:
@@ -18,8 +14,6 @@ def clean_text(text):
     text = text.replace('\r', ' ').replace('\n', ' ').replace('\u2019', "'")
     text = re.sub(r'\s+', ' ', text)  # collapse multiple spaces
     return text.strip()
-
-
 
 # --------------------------------------------
 # CONFIGURATION
@@ -35,11 +29,11 @@ API_ENDPOINT = f"{API_BASE_URL}/v1/store-job-api"
 
 # Test mode settings
 TEST_MODE = True  # Set to False to actually push to API
+MAX_JOBS_TO_SCRAPE = 2  # Limit jobs for testing (set to None for all jobs)
 
 print(f"🔧 Configuration:")
 print(f"   API: {API_ENDPOINT}")
 print(f"   Test Mode: {TEST_MODE}")
-
 
 # --------------------------------------------
 # SCRAPING FUNCTIONS
@@ -99,14 +93,13 @@ def get_today_jobs(max_jobs=None):
             if max_jobs and len(all_jobs) >= max_jobs:
                 print(f"✋ Reached limit of {max_jobs} jobs")
                 return all_jobs
-        break
+        # break
         print(f"   Found {len(job_divs)} jobs on page {page}")
         page += 1
         time.sleep(1)
 
     print(f"\n🎯 Total jobs found: {len(all_jobs)}")
     return all_jobs
-
 
 def get_job_details(job_url):
     """Fetch detailed info for one job posting."""
@@ -152,48 +145,81 @@ def get_job_details(job_url):
         deadline_text = deadline_text.replace("Deadline :", "").replace("Deadline:", "").strip()
         details["deadline_date"] = deadline_text
 
-    # Extract APPLICATION METHOD
+    # Extract APPLICATION METHOD - FIXED to get actual href URL
     application_method = None
     application_instructions = None
-
+    
+    # Find the "application-method" or "Method of Application" section
     app_method_section = soup.find("h2", id="application-method")
     if not app_method_section:
+        # Try alternative selectors
         for heading in soup.find_all(['h2', 'h3']):
             if 'application' in heading.get_text(strip=True).lower():
                 app_method_section = heading
                 break
-
+    
     if app_method_section:
+        # Get the div that follows the h2
         app_div = app_method_section.find_next_sibling("div")
-
+        
         if app_div:
+            # Get the full application instructions first
             application_instructions = app_div.get_text(separator=" ", strip=True)
+            
+            # Look for ANY link with href in the application div
             app_link = app_div.find("a", href=True)
-
+            
             if app_link:
                 link_href = app_link.get('href', '')
-
+                
+                # Extract the actual URL from href attribute
                 if link_href.startswith('http'):
+                    # It's already a full URL - use it directly
                     application_method = link_href
                 elif link_href.startswith('/apply-now/'):
-                    base_url = '/'.join(response.url.split('/')[:3])
+                    # Internal apply link - construct full URL
+                    base_url = '/'.join(response.url.split('/')[:3])  # Get https://domain.com
                     application_method = base_url + link_href
                 else:
+                    # Might be email-based application
+                    # Extract email from strong tag or text
                     email_tag = app_div.find("strong")
                     if email_tag:
                         email_text = email_tag.get_text(strip=True)
+                        # Check if it's actually an email
                         if '@' in email_text:
                             email = email_text
                             subject = title.replace(" ", "%20") if title else "Job%20Application"
                             application_method = f"mailto:{email}?subject={subject}"
-
+                    
                     if not application_method:
+                        # Try to find email using regex in the instructions
                         email_pattern = r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}'
                         email_match = re.search(email_pattern, application_instructions)
                         if email_match:
                             email = email_match.group(0)
                             subject = title.replace(" ", "%20") if title else "Job%20Application"
                             application_method = f"mailto:{email}?subject={subject}"
+            else:
+                # No link found, must be email-based
+                email_tag = app_div.find("strong")
+                if email_tag:
+                    email_text = email_tag.get_text(strip=True)
+                    if '@' in email_text:
+                        email = email_text
+                        subject = title.replace(" ", "%20") if title else "Job%20Application"
+                        application_method = f"mailto:{email}"
+                
+                if not application_method:
+                    # Last resort: regex search for email
+                    email_pattern = r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}'
+                    email_match = re.search(email_pattern, application_instructions)
+                    if email_match:
+                        email = email_match.group(0)
+                        subject = title.replace(" ", "%20") if title else "Job%20Application"
+                        application_method = f"mailto:{email}"
+                        #f"mailto:{email}?subject={subject}"
+
 
     overview_section = soup.select_one(".job-description")
     # overview_text = None
@@ -264,6 +290,7 @@ def get_job_details(job_url):
         "Apply Now": application_method,
         "Original URL": job_url,
     }
+
 
 # --------------------------------------------
 # API INTEGRATION
@@ -336,6 +363,8 @@ def map_job_to_api_format(job):
         "benefits": "Not specified"
     }
 
+
+
 def push_job_to_api(job_data, test_mode=True):
     """Push a single job to the API."""
     try:
@@ -368,6 +397,7 @@ def push_job_to_api(job_data, test_mode=True):
         print(f"   ❌ Exception: {e}")
         return False, None
 
+
 def push_job_to_api(job_data):
     """Push a single job to the API."""
     try:
@@ -391,7 +421,8 @@ def push_job_to_api(job_data):
     except Exception as e:
         print(f"   ❌ Exception posting {job_data.get('Title')}: {e}")
         return False
-        
+
+
 # --------------------------------------------
 # FILTERING FUNCTIONS
 # --------------------------------------------
@@ -415,13 +446,24 @@ def should_send_job(job_data, filters):
 
     # Check industries/fields
     allowed_industries = filters.get('industries', [])
+
     if allowed_industries:
-        job_field = (
-                      (job_data.get('Field') or "").lower(),
-                      (job_data.get('Industry') or "").lower(),
-                  )
-        if not any(industry.lower() in job_field for industry in allowed_industries):
-            return False, f"Industry not in allowed list: {job_field}"
+        # Normalize Field and Industry into a list of lowercase strings
+        field_values = job_data.get('Field') or []
+        industry_values = job_data.get('Industry') or []
+
+        # Convert both to lowercase lists (handles string or list)
+        def to_list(v):
+            if isinstance(v, list):
+                return [str(item).lower() for item in v]
+            return [str(v).lower()] if v else []
+
+        job_fields = to_list(field_values) + to_list(industry_values)
+
+        # Check if any allowed industry appears in any job field
+        if not any(ind.lower() in job_fields for ind in allowed_industries):
+            return False, f"Industry not in allowed list: {job_fields}"
+
 
     # Check blocked industries
     blocked_industries = filters.get('blocked_industries', [])
@@ -489,17 +531,14 @@ def main():
 
         # Only send jobs in these industries (leave empty [] to allow all)
         'industries': [
-            'Technology',
-            'ICT',
-            'Software',
-            'Engineering',
-            'Data',
-            'Digital',
             'Telecommunication',
             'Technical',
-            'Business Analysis and AI',
-            'Security',
-            'Intelligence'
+            'Security / Intelligence',
+            'ict / computer', 
+            'ict / telecommunication',
+            'Data, Business Analysis and AI',
+            'Product Management',
+            'Project Management'
             # Add more industries as needed
         ],
 
