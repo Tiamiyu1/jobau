@@ -347,7 +347,7 @@ def map_job_to_api_format(job):
         "title": job.get("Title"),
         "description": job.get("Description"),
         # "industry": job.get("Industry"),
-        "overview": job.get("Overview") job.get("Description"),
+        "overview": job.get("Overview") or job.get("Description"),
         "responsibilities": job.get("Description"),
         "url": job.get("Apply Now"),
         "expiration_date": expiration_date or "2025-12-31",
