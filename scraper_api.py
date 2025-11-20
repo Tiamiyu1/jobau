@@ -416,7 +416,10 @@ def should_send_job(job_data, filters):
     # Check industries/fields
     allowed_industries = filters.get('industries', [])
     if allowed_industries:
-        job_field = (job_data.get('Field') or "").lower()
+        job_field = (
+                      (job_data.get('Field') or "").lower(),
+                      (job_data.get('Industry') or "").lower(),
+                  )
         if not any(industry.lower() in job_field for industry in allowed_industries):
             return False, f"Industry not in allowed list: {job_field}"
 
@@ -430,10 +433,7 @@ def should_send_job(job_data, filters):
     # Check job types
     allowed_job_types = filters.get('job_types', [])
     if allowed_job_types:
-        job_type = (
-                      (job_data.get('Job Type') or "").lower(),
-                      (job_data.get('Industry') or "").lower(),
-                  )
+        job_type = (job_data.get('Job Type') or "").lower()
         if not any(jt.lower() in job_type for jt in allowed_job_types):
             return False, f"Job type not allowed: {job_type}"
 
