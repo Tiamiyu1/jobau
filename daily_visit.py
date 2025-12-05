@@ -66,17 +66,16 @@ import pandas as pd
 import numpy as np
 import json
 
-
 dat = pd.read_json("https://api.alumunite-staging.com/v1/user-daily-count" )['data']
-data = pd.read_json("https://api.alumunite.co/v1/user-daily-count")['data']
+df = pd.read_json("https://api.alumunite.co/v1/user-daily-count")['data']
 
 dat = pd.DataFrame(dat.tolist())
-data = pd.DataFrame(data.tolist())
+df = pd.DataFrame(df.tolist())
 
-df = pd.merge(dat, data, on='date', how='inner')
-df.columns = ['date', "stagging", "new_signups"]
+# df = pd.merge(dat, data, on='date', how='inner')
+df.columns = ['date', "new_signups"]
 
 # Convert the 'date' column to datetime objects
 df['date'] = pd.to_datetime(df['date']).dt.strftime('%Y-%m-%d')
-df['cum_stage'], df['cum_new_signups'] = df['stagging'].cumsum(), df['new_signups'].cumsum()
+df['cum_new_signups'] = df['new_signups'].cumsum()
 save_to_google_sheet(df)
