@@ -350,7 +350,7 @@ def map_job_to_api_format(job):
         "overview": job.get("Overview") or job.get("Description"),
         "responsibilities": job.get("Description"),
         "url": job.get("Apply Now"),
-        "expiration_date": expiration_date or "2025-12-31",
+        "expiration_date": expiration_date or "9999-01-01",
         "location": location,
         "job_type": job.get("Job Type"),
         "employment_type": "full-time",
