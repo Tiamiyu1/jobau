@@ -23,12 +23,12 @@ TODAY_URL = f"{BASE_URL}/jobs-by-date/today"
 headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
 
 # API Configuration - CHANGE THIS WHEN READY
-API_BASE_URL = 'https://api.alumunite-staging.com'  # Staging
-# API_BASE_URL = 'https://api.alumunite.co'  # Production
+# API_BASE_URL = 'https://api.alumunite-staging.com'  # Staging
+API_BASE_URL = 'https://api.alumunite.co'  # Production
 API_ENDPOINT = f"{API_BASE_URL}/v1/store-job-api"
 
 # Test mode settings
-TEST_MODE = True  # Set to False to actually push to API
+TEST_MODE = False  # Set to False to actually push to API
 MAX_JOBS_TO_SCRAPE = 2  # Limit jobs for testing (set to None for all jobs)
 
 print(f"🔧 Configuration:")
