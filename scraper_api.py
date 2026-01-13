@@ -353,7 +353,7 @@ def map_job_to_api_format(job):
         "expiration_date": expiration_date or "9999-01-01",
         "location": location,
         "job_type": job.get("Job Type"),
-        "employment_type": "full-time",
+        "employment_type": job.get("Job Type") or "full-time",
         "experience_level": job.get("Experience") or "Not Available",
         "qualifications": job.get("Qualification"),
         "skills": skills[:5] if skills else ["General"],
