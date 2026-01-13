@@ -444,6 +444,11 @@ def should_send_job(job_data, filters):
         if not value or (isinstance(value, str) and value.strip() == ""):
             return False, f"Missing required field: {field}"
 
+    # Exclude email-based applications
+    apply_url = (job_data.get('Apply Now') or "").lower()
+    if apply_url.startswith("mailto:") or "@" in apply_url:
+        return False, "Email-based application excluded"
+        
     # Check industries/fields
     allowed_industries = filters.get('industries', [])
 
