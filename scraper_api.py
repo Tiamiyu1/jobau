@@ -4,7 +4,7 @@ from bs4 import BeautifulSoup
 import pandas as pd
 import time
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 import random
 
 def clean_text(text):
@@ -350,7 +350,7 @@ def map_job_to_api_format(job):
         "overview": job.get("Overview") or job.get("Description"),
         "responsibilities": job.get("Description"),
         "url": job.get("Apply Now"),
-        "expiration_date": expiration_date or "9999-01-01",
+        "expiration_date": expiration_date or (datetime.today() + timedelta(days=30)).strftime("%Y-%m-%d"),
         "location": location,
         "job_type": job.get("Job Type"),
         "employment_type": job.get("Job Type") or "full-time",
@@ -358,7 +358,7 @@ def map_job_to_api_format(job):
         "qualifications": job.get("Qualification"),
         "skills": skills[:5] if skills else ["General"],
         "currency": currency,
-        "salary_range": salary_range or "Not Stated",
+        "salary_range": salary_range or "N/A",
         "pay_schedule": "Monthly",
         "benefits": "Not specified"
     }
