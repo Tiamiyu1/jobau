@@ -354,7 +354,7 @@ def map_job_to_api_format(job):
         "location": location,
         "job_type": job.get("Job Type"),
         "employment_type": job.get("Job Type") or "full-time",
-        "experience_level": job.get("Experience") or "Not Available",
+        "experience_level": job.get("Experience") or "N/A",
         "qualifications": job.get("Qualification"),
         "skills": skills[:5] if skills else ["General"],
         "currency": currency,
